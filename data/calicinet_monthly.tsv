@@ -1,0 +1,56 @@
+# CaliciNet monthly norovirus outbreak genotype percentages, United States.
+#
+# Source: Barclay L, Vinje J. Increasing Predominance of Norovirus GII.17 over GII.4,
+# United States, 2022-2025. Emerg Infect Dis 31(7), 2025. Figure 2.
+# https://wwwnc.cdc.gov/eid/article/31/7/25-0524_article
+#
+# Values are TRANSCRIBED from the data table printed beneath Figure 2, not digitised from
+# the plotted bars, so they are exact to the printed integer percent.
+#
+# Figure 2 reports only GII.4 and GII.17 against a grey "Total" envelope of all outbreaks.
+# The two named percentages do not sum to 100, so the remainder is other genotypes; it is
+# derived here as other_pct = 100 - gii4_pct - gii17_pct rather than being read off.
+#
+# Season denominators printed on the figure: 2022-23 N=372, 2023-24 N=321, 2024-25 N=354
+# (the 2024-25 season is truncated to September 2024-April 2025).
+#
+# Caveats:
+#  - Denominator is OUTBREAKS typed by CaliciNet, not read pairs. Comparison with CASPER
+#    is of composition and temporal pattern, not of the same quantity.
+#  - Monthly outbreak totals are small in summer months (the grey envelope approaches
+#    zero), so percentages in Jun-Sep rest on very few outbreaks and are noisy.
+#  - Season totals are printed; per-month totals are not, so monthly percentages cannot be
+#    weighted by their denominator from the published figure alone.
+month	gii4_pct	gii17_pct
+2022-09	33	0
+2022-10	10	0
+2022-11	17	8
+2022-12	48	8
+2023-01	46	17
+2023-02	59	10
+2023-03	51	2
+2023-04	67	2
+2023-05	45	18
+2023-06	38	0
+2023-07	21	7
+2023-08	0	0
+2023-09	0	20
+2023-10	0	18
+2023-11	35	24
+2023-12	32	18
+2024-01	30	15
+2024-02	46	18
+2024-03	36	31
+2024-04	24	47
+2024-05	10	61
+2024-06	13	67
+2024-07	17	67
+2024-08	13	67
+2024-09	0	43
+2024-10	10	69
+2024-11	13	65
+2024-12	6	84
+2025-01	10	82
+2025-02	10	84
+2025-03	18	70
+2025-04	33	42
