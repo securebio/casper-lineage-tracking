@@ -4,23 +4,12 @@
 # United States, 2022-2025. Emerg Infect Dis 31(7), 2025. Figure 2.
 # https://wwwnc.cdc.gov/eid/article/31/7/25-0524_article
 #
-# Values are TRANSCRIBED from the data table printed beneath Figure 2, not digitised from
-# the plotted bars, so they are exact to the printed integer percent.
-#
+# Values are transcribed from the data table printed beneath Figure 2.
 # Figure 2 reports only GII.4 and GII.17 against a grey "Total" envelope of all outbreaks.
 # The two named percentages do not sum to 100, so the remainder is other genotypes; it is
-# derived here as other_pct = 100 - gii4_pct - gii17_pct rather than being read off.
+# derived here as other_pct = 100 - gii4_pct - gii17_pct.
 #
-# Season denominators printed on the figure: 2022-23 N=372, 2023-24 N=321, 2024-25 N=354
-# (the 2024-25 season is truncated to September 2024-April 2025).
 #
-# Caveats:
-#  - Denominator is OUTBREAKS typed by CaliciNet, not read pairs. Comparison with CASPER
-#    is of composition and temporal pattern, not of the same quantity.
-#  - Monthly outbreak totals are small in summer months (the grey envelope approaches
-#    zero), so percentages in Jun-Sep rest on very few outbreaks and are noisy.
-#  - Season totals are printed; per-month totals are not, so monthly percentages cannot be
-#    weighted by their denominator from the published figure alone.
 month	gii4_pct	gii17_pct
 2022-09	33	0
 2022-10	10	0
