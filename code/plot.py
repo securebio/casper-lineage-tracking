@@ -42,7 +42,7 @@ CODE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = CODE_DIR.parent
 sys.path.insert(0, str(CODE_DIR))
 
-from plot_style import (add_panel_labels, init_plotting_style, save_figure,  # noqa: E402
+from plot_style import (init_plotting_style, save_figure,  # noqa: E402
                         FONT_SIZE_LARGE)
 
 # Font scale follows the other combined-panel figures (plot_taxonomic_panel_combined.py)
@@ -158,7 +158,7 @@ def comparison_rows(axes, frames, order, colors, titles, xlim):
 
 
 def panel_titles(fig, axes, titles, x_offset=0.012, y_offset=0.064):
-    """Pathogen name beside each panel letter, matching add_panel_labels placement."""
+    """Pathogen name above its panel."""
     for ax, title in zip(axes, titles):
         bbox = ax.get_position()
         fig.text(bbox.x0 + x_offset, bbox.y1 + y_offset, title,
@@ -245,8 +245,7 @@ def legend_row(ax, handles, ncol):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tables", type=Path, default=REPO_ROOT / "tables")
-    parser.add_argument("--output", type=Path,
-                        default=REPO_ROOT / "figures/lineage_composition.png")
+    parser.add_argument("--figures", type=Path, default=REPO_ROOT / "figures")
     args = parser.parse_args()
 
     init_plotting_style()
@@ -329,20 +328,7 @@ def main():
             if legend_gap is not None:
                 tuck_under(fig, ax2, axleg, gap=legend_gap)
 
-    # Combined figure, both pathogens
-    fig = plt.figure(figsize=(17, 20))
-    # Row 4 is an empty spacer so the panel-a legend cannot collide with the panel-b label
-    gs = fig.add_gridspec(9, 1,
-                          height_ratios=[1.0, 0.34, 1.0, 0.58, 0.02, 1.0, 0.34, 1.0, 0.58],
-                          hspace=0.72, left=0.075, right=0.99, top=0.95, bottom=0.04)
-    a = draw(fig, gs, 0, blocks["sars2"])
-    b = draw(fig, gs, 5, blocks["norovirus"])
-    finish(fig, [a, b])
-    add_panel_labels(fig, [a[0], b[0]], labels=["a", "b"],
-                     x_offset=-0.008, y_offset=0.064, fontsize=PANEL_LABEL_FONT)
-    panel_titles(fig, [a[0], b[0]], ["SARS-CoV-2", "Norovirus"])
-
-    # Standalone figures, one pathogen each and no panel letters
+    # One figure per pathogen; no panel letters, so each stands alone.
     for name, block in blocks.items():
         single = plt.figure(figsize=(17, 10))
         gs_one = single.add_gridspec(4, 1, height_ratios=[1.0, 0.34, 1.0, 0.58],
@@ -351,9 +337,8 @@ def main():
         axes = draw(single, gs_one, 0, block)
         finish(single, [axes], legend_gap=0.10)
         panel_titles(single, [axes[0]], [block["title"]], x_offset=-0.008)
-        save_figure(single, args.output.with_name(f"lineage_composition_{name}.png"))
+        save_figure(single, args.figures / f"lineage_composition_{name}.png")
 
-    save_figure(fig, args.output)
     print(f"  all {sars2.month.nunique()} months plotted; "
           f"{len(low_depth)} below {MIN_BREADTH:.0%} breadth: {sorted(low_depth)}")
 
