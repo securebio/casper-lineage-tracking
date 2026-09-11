@@ -72,8 +72,21 @@ SERIES_COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300
 # carries the separation.
 NORO_COLORS = ["#00bdbe", "#853e80", "#ce7a3b", "#5a66b9", "#83c575", "#ba5661"]
 OTHER_COLOR = "#b7b6b0"
+MISSING_COLOR = "#9b9a92"
+# Hue is pinned to the group, not to its rank, so showing or hiding a group never repaints
+# the others. NB.1.8.1 takes the eighth hue, which nothing else was using.
+SARS2_COLORS = {
+    "XBB*": "#2a78d6",
+    "JN.1* (other)": "#eb6834",
+    "KP.2*": "#1baf7a",
+    "KP.3*": "#eda100",
+    "XEC*": "#e87ba4",
+    "LP.8.1*": "#008300",
+    "NB.1.8.1*": "#e34948",
+    "XFG*": "#4a3aa7",
+}
+
 UNREPORTED_COLOR = "#e8e7e2"
-SECONDARY_INK = "#52514e"
 GRID_COLOR = "#dedcd5"
 
 GENOTYPE_ORDER = ["GII.4", "GII.17", "GII.2", "GII.3", "GII.6", "GI (all)", "Other genotypes"]
@@ -98,6 +111,7 @@ MIN_BREADTH = 0.25
 # the two sides, since the SARS-CoV-2 figure counted extracted reads while the norovirus
 # figure counted reads that had already aligned.
 COVERAGE_COLOR = "#8c8b85"
+COVERAGE_POINT_COLOR = "#55544d"
 
 
 def color_map(categories, palette=None):
@@ -149,7 +163,7 @@ def comparison_rows(axes, frames, order, colors, titles, xlim):
     """Two stacked-bar rows on a shared x axis: CASPER above, its comparator below."""
     for ax, frame, title in zip(axes, frames, titles):
         stacked_bars(ax, frame, order, colors)
-        ax.set_title(title, loc="left", fontsize=TITLE_FONT, color=SECONDARY_INK, pad=16)
+        ax.set_title(title, loc="left", fontsize=TITLE_FONT, color="black", pad=16)
         ax.set_ylabel("Fraction", fontsize=LABEL_FONT)
         ax.set_xlim(*xlim)
         date_axis(ax)
@@ -182,8 +196,11 @@ def coverage_row(ax, months, coverage, xlim, ylabel):
     # floating above it
     smallest = np.nanmin(values[values > 0]) if np.any(values > 0) else 1.0
     floor = max(1.0, 10.0 ** np.floor(np.log10(smallest)))
-    ax.bar(x, values, bottom=floor, width=24, color=COVERAGE_COLOR,
-           edgecolor="white", linewidth=0.6)
+    # A line on a log axis reads by position; a bar would encode length from an arbitrary
+    # baseline, since a log scale has no zero.
+    ax.plot(x, values, "-o", color=COVERAGE_COLOR, linewidth=2.8, markersize=7,
+            markerfacecolor=COVERAGE_POINT_COLOR, markeredgecolor="white",
+            markeredgewidth=1.0, zorder=3, clip_on=False)
     ax.set_yscale("log")
     ax.set_ylim(floor, np.nanmax(values) * 2.5)
     # Label a few decades across the range. A short axis defaults to a single tick, but
@@ -193,8 +210,9 @@ def coverage_row(ax, months, coverage, xlim, ylabel):
     hi_exp = int(np.floor(np.log10(top)))
     exps = list(range(lo_exp, hi_exp + 1))
     if len(exps) > 4:  # thin only when every decade would crowd the row
-        keep = np.unique(np.linspace(0, len(exps) - 1, 4).round().astype(int))
-        exps = [exps[i] for i in keep]
+        # Take every nth decade rather than sampling evenly across the list: sampling gave
+        # ticks 1, 2 and 1 decades apart, so the middle tick sat visibly off-centre.
+        exps = exps[::int(np.ceil(len(exps) / 4))]
     ticks = [10 ** e for e in exps]
     ax.set_yticks(ticks)
     # Keep every tick mark, but on a thin row label only alternate ones so the text does
@@ -203,9 +221,11 @@ def coverage_row(ax, months, coverage, xlim, ylabel):
     ax.set_yticklabels([compact_number(t) if i in labelled else ""
                         for i, t in enumerate(ticks)])
     ax.yaxis.set_minor_locator(mticker.NullLocator())
+    ax.grid(axis="y", color=GRID_COLOR, linewidth=0.9, zorder=0)
+    ax.set_axisbelow(True)
     ax.set_xlim(*xlim)
     ax.set_ylabel(ylabel, fontsize=LABEL_FONT - 6)
-    ax.tick_params(axis="both", labelsize=TICK_FONT - 4)
+    ax.tick_params(axis="both", labelsize=TICK_FONT - 4, labelcolor="black")
     ax.set_xticklabels([])
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -213,8 +233,10 @@ def coverage_row(ax, months, coverage, xlim, ylabel):
 
 # Gap between a composition row and the depth row beneath it, and between that depth
 # row and the comparator composition row below it.
-COVERAGE_GAP = 0.014
-COMPARATOR_GAP = 0.068
+# Wide enough to seat the "Coverage (×)" title between the composition row and
+# the depth bars; a tighter gap ran the title into the bars above.
+COVERAGE_GAP = 0.040
+COMPARATOR_GAP = 0.092
 
 
 def tuck_under(fig, upper_ax, lower_ax, gap=COVERAGE_GAP):
@@ -224,6 +246,21 @@ def tuck_under(fig, upper_ax, lower_ax, gap=COVERAGE_GAP):
     lower = lower_ax.get_position()
     height = lower.height
     lower_ax.set_position([lower.x0, upper.y0 - gap - height, lower.width, height])
+
+
+def mark_missing(ax, months, xlim):
+    """Short hatched stubs where the comparator published nothing, so a gap is not read
+    as a genuine zero."""
+    if months is None or not len(months):
+        return
+    import matplotlib as mpl
+    x = pd.to_datetime(pd.Index(months).astype(str) + "-01")
+    with mpl.rc_context({"hatch.linewidth": 1.1}):
+        ax.bar(x, 0.075, width=24, facecolor="white", edgecolor=MISSING_COLOR,
+               hatch="///", linewidth=0.9, zorder=2)
+    ax.text(x.min() + (x.max() - x.min()) / 2, 0.13, "No CaliciNet data available",
+            ha="center", va="bottom", fontsize=TICK_FONT, color="black", zorder=4)
+    ax.set_xlim(*xlim)
 
 
 def legend_row(ax, handles, ncol):
@@ -262,12 +299,15 @@ def main():
     sars2 = sars2.copy()
     present = sars2.groupby("group_label")[["casper_fraction", "cdc_fraction"]].max().max(axis=1)
     ranked = present.drop(labels=["Other"], errors="ignore").sort_values(ascending=False)
-    named = set(ranked.head(len(SERIES_COLORS) - 1).index)
+    # Other carries its own grey rather than a palette slot, so all eight hues are
+    # available to named groups.
+    named = set(ranked.head(len(SERIES_COLORS)).index)
     groups = [g for g in SARS2_ORDER if g in named] + ["Other"]
     sars2["category"] = np.where(sars2.group_label.isin(named), sars2.group_label, "Other")
     sars2 = sars2.groupby(["month", "category"], as_index=False)[
         ["casper_fraction", "cdc_fraction"]].sum(min_count=1)
-    group_colors = color_map(groups)
+    group_colors = {g: SARS2_COLORS.get(g, OTHER_COLOR) for g in groups}
+    group_colors["Other"] = OTHER_COLOR
 
     # ---- Panel b: norovirus -------------------------------------------------------------
     genotype_colors = color_map(GENOTYPE_ORDER, palette=NORO_COLORS)
@@ -279,6 +319,7 @@ def main():
                                cal.genotype, CALICINET_OTHER)
     cal = (cal.groupby(["month", "category"], as_index=False)
            .calicinet_fraction.sum().rename(columns={"calicinet_fraction": "fraction"}))
+    cal_missing = sorted(set(noro.month.astype(str)) - set(cal.month.astype(str)))
 
     # Measured coverage depth behind each CASPER bar
     sars2_cov = pooled.sort_values("month")
@@ -289,22 +330,34 @@ def main():
     sars2_frames = [
         sars2.rename(columns={"casper_fraction": "fraction"}).dropna(subset=["fraction"]),
         sars2.rename(columns={"cdc_fraction": "fraction"}).dropna(subset=["fraction"])]
-    sars2_legend = [Patch(facecolor=group_colors[g], label=g) for g in groups]
-    noro_legend = ([Patch(facecolor=genotype_colors[g], label=g) for g in GENOTYPE_ORDER]
+    # Other sits in the last column rather than trailing the second row; the named groups
+    # keep their sweep order around it.
+    named_order = [g for g in groups if g != "Other"]
+    legend_order = named_order[:4] + ["Other"] + named_order[4:]
+    sars2_legend = [Patch(facecolor=group_colors[g], label=g) for g in legend_order]
+    # The two remainder categories stack in the last column so the pair reads together;
+    # they are named for their source, since they are not the same quantity.
+    genotypes = [g for g in GENOTYPE_ORDER if g != "Other genotypes"]
+    noro_legend = ([Patch(facecolor=genotype_colors[g], label=g) for g in genotypes[:3]]
+                   + [Patch(facecolor=genotype_colors["Other genotypes"],
+                            label="Other genotypes (CASPER)")]
+                   + [Patch(facecolor=genotype_colors[g], label=g) for g in genotypes[3:]]
                    + [Patch(facecolor=UNREPORTED_COLOR,
-                            label="Other (CaliciNet, not reported separately)")])
+                            label="Other genotypes (CaliciNet, not reported separately)")])
 
     blocks = {
         "sars2": dict(title="SARS-CoV-2", frames=sars2_frames, order=groups,
                       colors=group_colors, legend=sars2_legend, ncol=5,
-                      rows=["Public CASPER data", "CDC clinical genomic surveillance"],
+                      rows=["CASPER wastewater sequencing",
+                            "CDC clinical genomic surveillance"],
                       cov_months=sars2_cov.month, cov_values=sars2_cov_depth),
         "norovirus": dict(title="Norovirus", frames=[casper_noro, cal],
                           order=GENOTYPE_ORDER + [CALICINET_OTHER],
                           colors=genotype_colors, legend=noro_legend, ncol=4,
-                          rows=["Public CASPER data",
+                          rows=["CASPER wastewater sequencing",
                                 "CaliciNet clinical outbreak surveillance"],
-                          cov_months=noro_cov.month, cov_values=noro_cov.mean_depth),
+                          cov_months=noro_cov.month, cov_values=noro_cov.mean_depth,
+                          missing=cal_missing),
     }
 
     def draw(fig, gs, offset, block):
@@ -315,7 +368,12 @@ def main():
         comparison_rows([ax1, ax2], block["frames"], block["order"], block["colors"],
                         block["rows"], xlim)
         ax1.set_xticklabels([])
-        coverage_row(axcov, block["cov_months"], block["cov_values"], xlim, "Depth (×)")
+        mark_missing(ax2, block.get("missing"), xlim)
+        # The depth row is thin, so its scale is named in a small title above it rather
+        # than a rotated y label, which crowded the axis at this height.
+        coverage_row(axcov, block["cov_months"], block["cov_values"], xlim, "")
+        axcov.set_title("Coverage (×)", loc="left", fontsize=TICK_FONT - 2,
+                        color="black", pad=2)
         legend_row(axleg, block["legend"], ncol=block["ncol"])
         return ax1, axcov, ax2, axleg
 
@@ -335,7 +393,7 @@ def main():
                                      hspace=0.72, left=0.075, right=0.99, top=0.90,
                                      bottom=0.07)
         axes = draw(single, gs_one, 0, block)
-        finish(single, [axes], legend_gap=0.10)
+        finish(single, [axes], legend_gap=0.125)
         panel_titles(single, [axes[0]], [block["title"]], x_offset=-0.008)
         save_figure(single, args.figures / f"lineage_composition_{name}.png")
 
