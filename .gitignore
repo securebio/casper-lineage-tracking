@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+
+# Scripts that produce data/ from the raw pipeline outputs. Kept locally so the analysis
+# is reproducible end to end, untracked because they reference internal infrastructure
+# and internal sample identifiers.
+pipeline/

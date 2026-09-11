@@ -77,7 +77,9 @@ def sars2_monthly():
 
     cdc = pd.read_csv(DATA / "cdc_variant_proportions.csv")
     cdc = cdc[cdc.usa_or_hhsregion == "USA"].copy()
-    cdc["month"] = pd.to_datetime(cdc.week_ending).dt.to_period("M").astype(str)
+    # CDC windows are 4 weeks labelled by their end date; the midpoint centres them.
+    cdc["month"] = (pd.to_datetime(cdc.week_ending)
+                    - pd.Timedelta(days=14)).dt.to_period("M").astype(str)
     cdc = (cdc.groupby(["month", "week_ending", "variant"], as_index=False).share.first()
            .groupby(["month", "variant"], as_index=False).share.mean())
     cdc = collapse(cdc, "variant", "share", ["month"], membership=membership)
