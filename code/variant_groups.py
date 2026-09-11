@@ -1,4 +1,7 @@
-"""Collapse Pango lineage names onto mutually exclusive comparison groups."""
+"""Collapse SARS-CoV-2 variant names onto mutually exclusive comparison groups.
+
+Variants are named as Pango lineages, so the lookups below work on lineage names
+and the hierarchy shipped with Freyja."""
 
 from pathlib import Path
 

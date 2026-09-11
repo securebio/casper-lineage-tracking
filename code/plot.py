@@ -1,15 +1,8 @@
 #!/usr/bin/env python3
-"""Lineage and genotype shifts resolvable in CASPER data, extended to every CASPER sample
-deposited in SRA.
+"""Variant composition resolvable in CASPER wastewater data.
 
-Same figure as the manuscript version, over a larger sample set and a longer window: 2,197
-libraries through 2026-06-30, against the release figure's 1,206 through 2026-03-31. It is
-drawn from this extension's own data directory and written to this extension's figures
-directory; the manuscript figure is not touched.
-
-The published CaliciNet series ends 2025-04, so the norovirus comparator row stops there
-while the CASPER row continues. That gap is the point of the extension rather than a defect
-in it, and is left visible rather than trimmed away.
+"Variant" covers both levels shown here: SARS-CoV-2 Pango lineages and norovirus capsid
+genotypes.
 
 (a) Norovirus capsid genotype composition from monthly national pools, beside CaliciNet
     clinical outbreak genotype percentages
@@ -17,14 +10,15 @@ in it, and is left visible rather than trimmed away.
     genomic surveillance variant proportions
 
 Composition panels are drawn as one stacked bar per month so that months without a usable
-estimate read as gaps rather than being interpolated across.
+estimate read as gaps rather than being interpolated across. The published CaliciNet series
+ends 2025-04, so the norovirus comparator stops there while the CASPER row continues; that
+span is marked rather than left blank.
 
-Inputs (data/):
-    lineage_norovirus_monthly.csv, lineage_sars2_monthly.csv,
-    lineage_sars2_pool_coverage.csv
+Inputs (tables/): norovirus_monthly.csv, sars2_monthly.csv, sars2_pool_coverage.csv,
+norovirus_coverage_monthly.csv
 
 Usage:
-    python plot_lineage_genotype_comparison.py
+    python plot.py
 """
 
 import argparse
@@ -52,7 +46,7 @@ TITLE_FONT = FONT_SIZE_LARGE + 8
 NOTE_FONT = FONT_SIZE_LARGE + 1
 PANEL_LABEL_FONT = FONT_SIZE_LARGE + 12
 
-# Lineage and genotype categories have no counterpart in the shared palettes
+# Variant categories have no counterpart in the shared palettes
 # (STATE_COLORS, TAXONOMIC_COLORS, VIRUS_HOST_COLORS), so a dedicated categorical set is
 # used here. Hues are assigned in a fixed order and never cycled: anything beyond the named
 # categories falls into a neutral grey rather than taking a generated hue. The eight hues
@@ -99,7 +93,7 @@ SARS2_ORDER = ["XBB*", "BA.2.86* (excl. JN.1)", "JN.1* (other)", "KP.2*", "KP.3*
 
 # Every month is plotted. The depth row beneath each CASPER row shows the coverage each
 # estimate rests on, so a reader can judge the low-coverage months directly rather than
-# having them silently withheld. The correlations in tables/lineage_comparison_stats.tsv
+# having them silently withheld. The correlations reported alongside the figure
 # are still computed on months reaching at least MIN_BREADTH of the genome at >=10x.
 MIN_BREADTH = 0.25
 
@@ -395,7 +389,7 @@ def main():
         axes = draw(single, gs_one, 0, block)
         finish(single, [axes], legend_gap=0.125)
         panel_titles(single, [axes[0]], [block["title"]], x_offset=-0.008)
-        save_figure(single, args.figures / f"lineage_composition_{name}.png")
+        save_figure(single, args.figures / f"variant_composition_{name}.png")
 
     print(f"  all {sars2.month.nunique()} months plotted; "
           f"{len(low_depth)} below {MIN_BREADTH:.0%} breadth: {sorted(low_depth)}")
