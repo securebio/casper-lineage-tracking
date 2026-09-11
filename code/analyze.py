@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
-from lineage_groups import DISPLAY_NAMES, collapse, load_membership  # noqa: E402
+from variant_groups import DISPLAY_NAMES, collapse, load_membership  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
